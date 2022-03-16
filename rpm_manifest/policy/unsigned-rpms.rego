@@ -6,4 +6,3 @@ deny[msg] {
 
   msg = sprintf("All RPMs must be signed! Found following unsigned rpms(nvra): %s", [concat(", ", unsigned_rpms)])
 }
-
