@@ -1,0 +1,39 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: run-basic-sanity-check
+spec:
+  stepTemplate:
+    volumeMounts:
+      - name: directory
+        mountPath: /workspace/source/directory
+  results:
+    - name: testResult
+      description: the result of sanity test
+  steps:
+    - name: run-sanity-signature-check-pvc
+      image: quay.io/redhat-appstudio/hacbs-test:stable
+      script: |
+        #!/bin/sh
+        /usr/bin/conftest test /directory/rpm-manifest.json --policy /project/image/policy/unsigned-rpms.rego --output=json > /directory/test-result-in-pvc.json
+      volumeMounts:
+        - name: directory
+          mountPath: /directory
+    - name: run-sanity-signature-check-result
+      image: quay.io/redhat-appstudio/hacbs-test:stable
+      script: |
+        #!/bin/sh
+        /usr/bin/conftest test /directory/rpm-manifest.json --policy /project/image/policy/unsigned-rpms.rego --output=json > /tekton/results/testResult
+      volumeMounts:
+        - name: directory
+          mountPath: /directory
+    - name: show-result-in-this-task
+      image: alpine
+      script: |
+        #!/bin/sh
+        cat /tekton/results/testResult
+  volumes:
+    - name: directory
+      persistentVolumeClaim:
+        claimName: basic-sanity-check-pvc

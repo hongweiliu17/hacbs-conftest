@@ -1,0 +1,30 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: show-sanity-test-result
+spec:
+  description: >-
+    Show basic sanity check results
+  params:
+    - name: previousResult
+      description: the test result
+      default: ""
+  steps:
+    - name: show-result-from-last-task-pvc
+      image: alpine
+      script: |
+        #!/bin/sh
+        cat /directory/test-result-in-pvc.json
+      volumeMounts:
+        - name: directory
+          mountPath: /directory
+    - name: show-result-from-last-task-result
+      image: alpine
+      script: |
+        #!/bin/sh
+        echo '$(params.previousResult)'
+  volumes:
+    - name: directory
+      persistentVolumeClaim:
+        claimName: basic-sanity-check-pvc

@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: sanity-test-pipeline
+spec:
+  params:
+    - name: imageID
+      description: the id for image rpm-manifest
+      default: 5ef0832cd70cc56cea87cb77
+  tasks:
+    - name: get-rpm-manifest
+      taskRef:
+        name: get-rpm-manifest
+    - name: run-sanity-check
+      taskRef:
+        name: run-basic-sanity-check
+      runAfter:
+        - get-rpm-manifest
+    - name: show-test-result
+      params:
+        - name: previousResult
+          value: $(tasks.run-sanity-check.results.testResult)
+      taskRef:
+        name: show-sanity-test-result
+      runAfter:
+        - get-rpm-manifest
+        - run-sanity-check

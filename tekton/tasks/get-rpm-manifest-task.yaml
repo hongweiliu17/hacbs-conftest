@@ -1,0 +1,37 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: get-rpm-manifest
+spec:
+  stepTemplate:
+    volumeMounts:
+      - name: directory
+        mountPath: /workspace/source/directory
+  params:
+    - name: imageID
+      description: the id for image rpm-manifest
+      default: 5ef0832cd70cc56cea87cb77
+    - name: api-key
+      description: the public key for catalog.redhat.com
+      default: abc
+  results:
+    - name: testResult
+      description: the result of sanity test
+  steps:
+    - name: get-rpm-manifest
+      image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+      script: "curl -X GET  'https://catalog.redhat.com/api/containers/v1/images/id/$(inputs.params.imageID)/rpm-manifest?include=rpms'  -H 'X-API-KEY: $(API_KEY)' > /directory/rpm-manifest.json"
+      volumeMounts:
+        - name: directory
+          mountPath: /directory
+      env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: public-key-catalog-secret
+              key: api-key
+  volumes:
+    - name: directory
+      persistentVolumeClaim:
+        claimName: basic-sanity-check-pvc
